@@ -1,0 +1,26 @@
+# Ignore Mac-specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Ignore Python files
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore Django files
+*.log
+local_settings.py
+
+# Ignore database files
+db.sqlite3
+
+# Ignore IDE files
+*.iml
+.idea
+.vscode
+.idea/*
+
+# Ignore node_modules and bower_components
+node_modules/
+bower_components/
