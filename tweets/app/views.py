@@ -1,4 +1,5 @@
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Case, When
+from django.forms import BooleanField
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -6,7 +7,7 @@ from rest_framework.views import APIView
 from rest_framework import generics, status
 
 from app.models import User, Tweet, Following
-from app.serializers import TweetSerializer, FollowingSerializer
+from app.serializers import TweetSerializer, FollowingSerializer, UserFollowingSerializer
 
 
 class TweetViewSet(ModelViewSet):
@@ -23,6 +24,25 @@ class FollowingListCreateApiView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         return Following.objects.filter(user__id=self.request.user.id).all()
+
+
+class UserFollowingListApiView(generics.ListCreateAPIView):
+    serializer_class = UserFollowingSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        logged_in_user = self.request.user
+
+        # exclude the current user from the list
+        users_list = User.objects.exclude(user__id=self.request.user.id)
+
+        return users_list.annotate(
+            is_following=Case(
+                When(followers__user=logged_in_user, then=True),
+                default=False,
+                output_field=BooleanField()
+            )
+        )
 
 
 class FeedsApiView(APIView):

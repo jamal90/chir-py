@@ -9,4 +9,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('v1/followings', FollowingListCreateApiView.as_view(), name='followings'),
     path('v1/feeds', FeedsApiView.as_view(), name='feeds'),
+    path('v1/user-followings', FollowingListCreateApiView.as_view(), name='user-followings'),
 ]
