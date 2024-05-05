@@ -11,23 +11,30 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'first_name', 'last_name', 'email']
 
 
+class UserFollowingSerializer(serializers.ModelSerializer):
+    is_following = serializers.BooleanField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'is_following']
+
+
 class TweetSerializer(serializers.ModelSerializer):
-    user_id = serializers.CharField(write_only=True)
     user = UserSerializer(read_only=True)
 
     class Meta:
         model = Tweet
-        fields = ['id', 'content', 'created_at', 'user_id', 'user']
+        fields = ['id', 'content', 'created_at', 'user']
 
     def create(self, validated_data):
-        user_id = validated_data.pop('user_id', None)
-        user = User.objects.get(pk=user_id)
+        user = self.context['request'].user
         return Tweet.objects.create(**validated_data, user=user)
 
     @staticmethod
     def validate_content(value):
         if not value:
             raise serializers.ValidationError("Content cannot be empty")
+
         if len(value) < 2:
             raise serializers.ValidationError("Content cannot be less than 2 characters")
 
