@@ -1,5 +1,4 @@
-from django.db.models import Prefetch, Case, When
-from django.forms import BooleanField
+from django.db.models import Prefetch, Exists, OuterRef
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -26,7 +25,7 @@ class FollowingListCreateApiView(generics.ListCreateAPIView):
         return Following.objects.filter(user__id=self.request.user.id).all()
 
 
-class UserFollowingListApiView(generics.ListCreateAPIView):
+class UserFollowingListApiView(generics.ListAPIView):
     serializer_class = UserFollowingSerializer
     permission_classes = [IsAuthenticated]
 
@@ -34,16 +33,19 @@ class UserFollowingListApiView(generics.ListCreateAPIView):
         logged_in_user = self.request.user
 
         # exclude the current user from the list
-        users_list = User.objects.exclude(user__id=self.request.user.id)
+        users_list = (User.objects
+                      .exclude(id=logged_in_user.id)
+                      .exclude(is_staff=True)
+                      .all())
 
-        return users_list.annotate(
-            is_following=Case(
-                When(followers__user=logged_in_user, then=True),
-                default=False,
-                output_field=BooleanField()
+        # note - followers here is from the inverse relation defined in the Following entity
+        users_followings = users_list.annotate(
+            is_following=Exists(
+                Following.objects.filter(user__id=logged_in_user.id, following__id=OuterRef('id'))
             )
         )
 
+        return users_followings
 
 class FeedsApiView(APIView):
     permission_classes = [IsAuthenticated]

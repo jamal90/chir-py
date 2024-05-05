@@ -11,8 +11,8 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'first_name', 'last_name', 'email']
 
 
-class UserFollowingSerializer:
-    is_following = serializers.BooleanField(source='is_following')
+class UserFollowingSerializer(serializers.ModelSerializer):
+    is_following = serializers.BooleanField()
 
     class Meta:
         model = User
