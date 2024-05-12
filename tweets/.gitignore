@@ -24,3 +24,7 @@ db.sqlite3
 # Ignore node_modules and bower_components
 node_modules/
 bower_components/
+
+
+# ignore static-collect files
+static/**
