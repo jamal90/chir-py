@@ -1,4 +1,5 @@
 version: '3'
+
 services:
   tweets: 
     image: chirpy-tweets:latest
@@ -15,3 +16,48 @@ services:
       - ./../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./../nginx/static/:/var/www/static/root/:ro
       - ./../tweets/static/:/var/www/static/tweets/:ro
+
+  keycloak-idp:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak-idp
+    ports:
+      - "8080:8080"
+    environment:
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+    command: [ "start-dev" ]
+  
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:latest
+    container_name: oauth2-proxy
+    restart: always
+    command:
+      - --http-address
+      - 0.0.0.0:4180
+      - --cookie-domain
+      - tweets.chirp.com
+      - --whitelist-domain=*.chirp.com
+    environment:
+      - OAUTH2_PROXY_PROVIDER=keycloak-oidc
+      - OAUTH2_PROXY_OIDC_ISSUER_URL=http://keycloak-idp:8080/realms/chirpy
+      - OAUTH2_PROXY_COOKIE_SECRET=${COOKIE_SECRET}
+      - OAUTH2_PROXY_CLIENT_ID=${OAUTH2_CLIENT_ID}
+      - OAUTH2_PROXY_CLIENT_SECRET=${OAUTH2_CLIENT_SECRET}
+      
+      # cookie related settings
+      - OAUTH2_PROXY_COOKIE_SECURE=false
+      - OAUTH2_PROXY_SESSION_STORE_TYPE=cookie
+      - OAUTH2_PROXY_COOKIE_NAME=SESSION
+      - OAUTH2_PROXY_COOKIE_SAMESITE=lax
+
+      - OAUTH2_PROXY_REDIRECT_URL=http://tweets.chirp.com/oauth2/callback
+      - OAUTH2_PROXY_EMAIL_DOMAINS=*
+      - OAUTH2_PROXY_CODE_CHALLENGE_METHOD=S256
+      - OATUH2_PROXY_PROVIDER_DISPLAY_NAME=Keycloak
+      - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
+
+      # required to pass auth related headers to the backed / proxy app
+      - OAUTH2_PROXY_SET_XAUTHREQUEST=true
+      - OAUTH2_PROXY_SET_AUTHORIZATION_HEADER=true
+    ports:
+      - "4180:4180"

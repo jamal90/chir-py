@@ -17,11 +17,12 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
-from .views import profile
+from .views import profile, echo
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("app.urls")),
     path('accounts/profile/', profile, name='profile'),
     path('accounts/', include('allauth.urls')),
+    path('echo', echo)
 ]
